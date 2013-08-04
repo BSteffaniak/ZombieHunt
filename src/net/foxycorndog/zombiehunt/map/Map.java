@@ -5,14 +5,20 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import javax.imageio.ImageIO;
 
+import net.foxycorndog.jbiscuit.actor.JActor;
 import net.foxycorndog.jbiscuit.item.tile.JTileContainer;
 import net.foxycorndog.jbiscuit.map.JImageChunk;
 import net.foxycorndog.jbiscuit.map.JImageMap;
 import net.foxycorndog.jfoxylib.components.Image;
 import net.foxycorndog.jfoxylib.opengl.texture.Texture;
+import net.foxycorndog.zombiehunt.actor.Actor;
+import net.foxycorndog.zombiehunt.actor.Player;
 import net.foxycorndog.zombiehunt.tiles.Tile;
 
 /**
@@ -26,7 +32,11 @@ import net.foxycorndog.zombiehunt.tiles.Tile;
  */
 public class Map extends JImageMap
 {
-	public static final int	TILE_SIZE = 8;
+	private ArrayList<Player>					players;
+	
+	private HashMap<Integer, HashSet<Integer>>	collisions;
+	
+	public static final int						TILE_SIZE = 8;
 	
 	/**
 	 * Create a Map that will hold chunks that are the specified
@@ -67,6 +77,10 @@ public class Map extends JImageMap
 	{
 		super(image.getWidth() * TILE_SIZE, image.getHeight() * TILE_SIZE, container);
 		
+		players    = new ArrayList<Player>();
+		
+		collisions = new HashMap<Integer, HashSet<Integer>>();
+		
 		BufferedImage img = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
 		
 		Graphics g = img.createGraphics();
@@ -94,11 +108,128 @@ public class Map extends JImageMap
 				{
 					getChunk(0, 0).getLayerImage(JImageChunk.MIDDLEGROUND).getTexture().bind();
 					
-					int values[] = tile.getPixels();
+					int values[] = tile.getColoredPixels();
 					
 					setPixels(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE, JImageChunk.MIDDLEGROUND, values);
+					
+					if (tile.isCollidable())
+					{
+						if (!collisions.containsKey(x))
+						{
+							collisions.put(x, new HashSet<Integer>());
+						}
+						
+						collisions.get(x).add(y);
+					}
 				}
 			}
 		}
+	}
+	
+	/**
+	 * Get whether the Tile at the specified location is collidable.
+	 * 
+	 * @param x The horizontal location of the Tile.
+	 * @param y The vertical location of the Tile.
+	 * @return Whether or not the Tile is collidable.
+	 */
+	public boolean isCollision(int x, int y)
+	{
+		if (collisions.containsKey(x))
+		{
+			return collisions.get(x).contains(y);
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Checks whether there is a collision with the Actor and any of the
+	 * Chunks.
+	 * 
+	 * @param actor The Actor to check collisions on.
+	 * @return Whether there is a collision.
+	 */
+	public boolean isCollision(JActor actor)
+	{
+		float actorX      = actor.getX() + actor.getXOffset();
+		float actorY      = actor.getY() + actor.getYOffset();
+		float actorWidth  = actor.getWidth() + actor.getWidthOffset();
+		float actorHeight = actor.getHeight() + actor.getHeightOffset();
+		
+		float xt          = actorX / getContainer().getItemWidth();
+		float yt          = actorY / getContainer().getItemHeight();
+		float wt          = actorWidth  / getContainer().getItemWidth();
+		float ht          = actorHeight / getContainer().getItemHeight();
+		
+		int endX = (int)Math.ceil(xt + wt);
+		int endY = (int)Math.ceil(yt + ht);
+		
+		for (float y = yt; y < endY; y++)
+		{
+			for (float x = xt; x < endX; x++)
+			{
+				if (isCollision((int)Math.floor(x), (int)Math.floor(y)))
+				{
+					return true;
+				}
+			}
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Get all of the Players within the Map.
+	 * 
+	 * @return An ArrayList of the Players in the Map.
+	 */
+	public ArrayList<Player> getPlayers()
+	{
+		return players;
+	}
+	
+	public Player getClosestPlayer(Actor actor)
+	{
+		float  min    = Float.MAX_VALUE;
+		Player player = null;
+		
+		for (int i = 0; i < players.size(); i++)
+		{
+			float dist = distance(actor, players.get(i));
+			
+			if (dist < min)
+			{
+				min = dist;
+				
+				player = players.get(i);
+			}
+		}
+		
+		return player;
+	}
+	
+	/**
+	 * Add the specified Player to the list of Players in the Map.
+	 * 
+	 * @param player The Player to add to the Map.
+	 */
+	public void addPlayer(Player player)
+	{
+		players.add(player);
+		
+		addActor(player);
+	}
+	
+	/**
+	 * Get the distance between the two Actors.
+	 * 
+	 * @param a1 The first Actor.
+	 * @param a2 The second Actor.
+	 * @return The distance between the Actors.
+	 */
+	private static float distance(Actor a1, Actor a2)
+	{
+		return (float)Math.sqrt(Math.pow(a1.getX() - a2.getX(), 2) + Math.pow(a1.getY() - a2.getY(), 2));
 	}
 }
