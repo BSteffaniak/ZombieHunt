@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import net.foxycorndog.jbiscuit.item.tile.JTile;
 import net.foxycorndog.jbiscuit.item.tile.JTileContainer;
 import net.foxycorndog.jfoxylib.opengl.texture.SpriteSheet;
+import net.foxycorndog.jfoxylib.util.ImageData;
 import net.foxycorndog.zombiehunt.map.Map;
 
 /**
@@ -21,9 +22,11 @@ public class Tile extends JTile
 {
 	private int						color;
 	
+	private static boolean			initialized;
+	
 	private static JTileContainer	container;
 	
-	private static boolean			initialized;
+	private static ImageData		tileData;
 	
 	public Tile(String name, int x, int y, int cols, int rows, boolean collidable, int color)
 	{
@@ -41,11 +44,13 @@ public class Tile extends JTile
 		
 		container = new JTileContainer(8, 8);
 		
+		tileData = null;
 		SpriteSheet sprites = null;
 		
 		try
 		{
-			sprites = new SpriteSheet("res/images/terrain/tiles.png", 12, 12);
+			sprites  = new SpriteSheet("res/images/terrain/tiles.png", 12, 3);
+			tileData = new ImageData("res/images/terrain/tiles.png");
 		}
 		catch (IOException e)
 		{
@@ -77,7 +82,7 @@ public class Tile extends JTile
 		
 		SpriteSheet sprites = container.getSpriteSheet();
 		
-		pixels = sprites.getPixels(getX() * Map.TILE_SIZE, (sprites.getNumRows() - getY() - 1) * Map.TILE_SIZE, getCols() * Map.TILE_SIZE, getRows() * Map.TILE_SIZE);
+		pixels = tileData.getData(getX() * Map.TILE_SIZE, (sprites.getNumRows() - getY() - 1) * Map.TILE_SIZE, getCols() * Map.TILE_SIZE, getRows() * Map.TILE_SIZE);
 		
 		return pixels;
 	}
@@ -86,7 +91,7 @@ public class Tile extends JTile
 	{
 		int pixels[] = getPixels();
 		
-		int col = 0x010101 * (int)(Math.random() * 3) + 0x010101 * 80;
+		int col = 0x010101 * (int)(Math.random() * 7) + 0x010101 * 80 - 0x010101 * 32;
 		
 		for (int i = 0; i < pixels.length; i++)
 		{

@@ -7,6 +7,7 @@ import net.foxycorndog.jfoxylib.input.Mouse;
 import net.foxycorndog.jfoxylib.opengl.GL;
 import net.foxycorndog.jfoxylib.opengl.bundle.Bundle;
 import net.foxycorndog.jfoxylib.opengl.texture.SpriteSheet;
+import net.foxycorndog.zombiehunt.map.Map;
 
 /**
  * 
@@ -28,9 +29,9 @@ public class Player extends Actor
 	/**
 	 * @param map The map to add the actor to.
 	 */
-	public Player(JMap map)
+	public Player(Map map)
 	{
-		super(map, 8, 4, 1, 2, 1000);
+		super(map, 8, 4, 1, 2, 1000, 1000);
 		
 		init();
 		
@@ -81,35 +82,71 @@ public class Player extends Actor
 		initialized = true;
 	}
 	
+	private void positionTowardMouse()
+	{
+		int   mx      = Mouse.getX();
+		int   my      = Mouse.getY();
+		
+		float screenX = getScreenX() + getWidth()  / 2f;
+		float screenY = getScreenY() + getHeight() / 2f;
+		
+		screenX *= getMap().getScale();
+		screenY *= getMap().getScale();
+		
+		float offX    = mx - screenX;
+		float offY    = my - screenY;
+		
+		updateRotation(offX, offY);
+	}
+	
+	public void before()
+	{
+		GL.translate(getX(), getY(), 0);
+		
+		GL.translate(getWidth() / 2f, getHeight() / 2f, 0);
+		GL.rotate(0, 0, getRotation());
+		GL.translate(-getWidth() / 2f, -getHeight() / 2f, 0);
+	}
+	
+	public void after()
+	{
+		
+	}
+	
+	public void bind()
+	{
+		bundle.beginDraw(sprites);
+	}
+
+	public void draw()
+	{
+		GL.pushMatrix();
+		{
+			positionTowardMouse();
+			
+			before();
+			bundle.drawArrays(GL.TRIANGLES, 3 * 2 * getWalkCycle(), 3 * 2);
+			after();
+		}
+		GL.popMatrix();
+	}
+	
+	public void unbind()
+	{
+		bundle.endDraw();
+	}
+	
 	/**
 	 * @see net.foxycorndog.jbiscuit.actor.JActor#render()
 	 */
 	public void render()
 	{
-		GL.pushMatrix();
-		{
-			int   mx      = Mouse.getX();
-			int   my      = Mouse.getY();
-			
-			float screenX = getScreenX() + getWidth()  / 2f;
-			float screenY = getScreenY() + getHeight() / 2f;
-			
-			screenX *= getMap().getScale();
-			screenY *= getMap().getScale();
-			
-			float offX    = mx - screenX;
-			float offY    = my - screenY;
-			
-			updateRotation(offX, offY);
-			
-			GL.translate(getX(), getY(), 0);
-			
-			GL.translate(getWidth() / 2f, getHeight() / 2f, 0);
-			GL.rotate(0, 0, getRotation());
-			GL.translate(-getWidth() / 2f, -getHeight() / 2f, 0);
-			
-			bundle.render(GL.TRIANGLES, 3 * 2 * getWalkCycle(), 3 * 2, sprites);
-		}
-		GL.popMatrix();
+		super.render();
+		
+		bind();
+		
+		draw();
+		
+		unbind();
 	}
 }

@@ -23,9 +23,9 @@ public class BigJohn extends Enemy
 	 * 
 	 * @param map The map to add the actor to.
 	 */
-	public BigJohn(JMap map)
+	public BigJohn(Map map)
 	{
-		super(map, 14, 13, 0.5f, 2, 1500, 10);
+		super(map, 14, 13, 0.5f, 2, 1500, 10, 150);
 		
 		init();
 		
@@ -38,7 +38,7 @@ public class BigJohn extends Enemy
 	}
 	
 	/**
-	 * Initialize the Player class.
+	 * Initialize the BigJohn class.
 	 */
 	private static void init()
 	{
@@ -75,41 +75,41 @@ public class BigJohn extends Enemy
 		
 		initialized = true;
 	}
-	
-	/**
-	 * @see net.foxycorndog.jbiscuit.actor.JActor#render()
-	 */
-	public void render()
+
+	public void bind()
+	{
+		bundle.beginDraw(sprites);
+	}
+
+	public void draw()
 	{
 		GL.pushMatrix();
 		{
-			Player player  = ((Map)getMap()).getClosestPlayer(this);
+			positionTowardPlayer();
 			
-			float  screenX = player.getX() + player.getWidth()  / 2f;
-			float  screenY = player.getY() + player.getHeight() / 2f;
-			
-			float  mx      = getX() + getWidth()  / 2f;
-			float  my      = getY() + getHeight() / 2f;
-			
-			screenX *= getMap().getScale();
-			screenY *= getMap().getScale();
-			
-			mx *= getMap().getScale();
-			my *= getMap().getScale();
-			
-			float offX = mx - screenX;
-			float offY = my - screenY;
-			
-			updateRotation(offX, offY);
-			
-			GL.translate(getX(), getY(), 0);
-			
-			GL.translate(getWidth() / 2f, getHeight() / 2f, 0);
-			GL.rotate(0, 0, getRotation());
-			GL.translate(-getWidth() / 2f, -getHeight() / 2f, 0);
-			
-			bundle.render(GL.TRIANGLES, 3 * 2 * getWalkCycle(), 3 * 2, sprites);
+			bundle.drawArrays(GL.TRIANGLES, 3 * 2 * getWalkCycle(), 3 * 2);
 		}
 		GL.popMatrix();
+	}
+	
+	public void unbind()
+	{
+		bundle.endDraw();
+	}
+	
+	/**
+	 * @see net.foxycorndog.jbiscuit.actor.JActor#render()
+	 * 
+	 * @param bind Whether or not to bind the Buffers.
+	 */
+	public void render()
+	{
+		super.render();
+		
+		bind();
+		
+		draw();
+		
+		unbind();
 	}
 }
