@@ -111,7 +111,7 @@ public class Gun extends Entity
 			
 			lastShot = current;
 			
-			shot.play();
+//			shot.play();
 		}
 	}
 	

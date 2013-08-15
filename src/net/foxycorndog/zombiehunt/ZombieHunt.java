@@ -28,7 +28,7 @@ import net.foxycorndog.zombiehunt.actor.enemy.Greg;
 import net.foxycorndog.zombiehunt.actor.enemy.Zombie;
 import net.foxycorndog.zombiehunt.entity.gun.Glock;
 import net.foxycorndog.zombiehunt.entity.gun.Gun;
-import net.foxycorndog.zombiehunt.entity.gun.Kelly;
+import net.foxycorndog.zombiehunt.entity.gun.MachineGun;
 import net.foxycorndog.zombiehunt.map.Map;
 import net.foxycorndog.zombiehunt.menu.MainMenu;
 import net.foxycorndog.zombiehunt.menu.PauseMenu;
@@ -164,7 +164,7 @@ public class ZombieHunt extends GameStarter
 		player.setLocation(1190, 975);
 		map.addPlayer(player);
 
-		gun = new Kelly();
+		gun = new MachineGun();
 		player.addGun(gun);
 		
 		for (int y = 100; y < map.getHeight() * Map.TILE_SIZE; y += 80)
@@ -278,6 +278,8 @@ public class ZombieHunt extends GameStarter
 	
 	private void renderHealth()
 	{
+		GL.translate(0, 0, 6);
+		
 		Color color = GL.getColor();
 		
 		GL.translate(10, 40, 0);
@@ -304,6 +306,8 @@ public class ZombieHunt extends GameStarter
 	
 	private void renderStamina()
 	{
+		GL.translate(0, 0, 6);
+		
 		Color color = GL.getColor();
 		
 		GL.translate(10, 10, 0);
@@ -349,7 +353,9 @@ public class ZombieHunt extends GameStarter
 		
 		float scale = (deathSceneTimer + 1) / 2;
 		
-		GL.scale(scale, scale, 0);
+		GL.scale(scale, scale, 1);
+		
+		GL.translate(player.getWidth() * 2f, -player.getHeight() * 2f, 0);
 		
 		GL.rotate(0, 0, deathSceneTimer);
 		
@@ -394,67 +400,72 @@ public class ZombieHunt extends GameStarter
 				
 				map.render(player);
 				
+				GL.untranslate();
+				GL.unrotate();
 				GL.unscale();
 				
 				renderHealth();
 				renderStamina();
 				
-				font.render("Kills: " + player.getKills(), 0, 0, 0, 3, Font.RIGHT, Font.TOP, null);
+				font.render("Kills: " + player.getKills(), 0, 0, 6, 3, Font.RIGHT, Font.TOP, null);
 				
-				GL.pushMatrix();
+				if (player.isAlive())
 				{
-					Image bloodImage = map.getBloodImage();
-					
-					float scale = 1;
+					GL.pushMatrix();
+					{
+						Image bloodImage = map.getBloodImage();
 						
-					if (bloodPulse >= 1)
-					{
-						scale *= 0.9f;
-					}
-					
-					GL.translate(0, 0, 6);
-					
-					if (Frame.getWidth() > Frame.getHeight())
-					{
-						scale *= Frame.getHeight() / bloodImage.getWidth();
-					}
-					else
-					{
-						scale *= Frame.getWidth() / bloodImage.getWidth();
-					}
+						GL.translate(0, 0, 6);
 						
-					GL.translate((Frame.getWidth() - bloodImage.getWidth() * scale) / 2, (Frame.getHeight() - bloodImage.getWidth() * scale) / 2, 0);
-					
-					float alpha = player.getMaxHealth() - player.getHealth();
-					
-					alpha /= player.getMaxHealth() * 2;
-					alpha += 0.5f;
-					
-					GL.scale(scale, scale, 1);
-					
-					Color color = GL.getColor();
-					
-					GL.setColor(1, 1, 1, alpha - 0.5f);
-					
-					bloodImage.render();
-					
-					GL.setColor(color);
-					
-					if (player.getHealth() < player.getMaxHealth())
-					{
-						bloodPulse += 0.1f * delta;
+						float scale = 1;
+							
+						if (bloodPulse >= 1)
+						{
+							scale *= 0.9f;
+						}
 						
-						if (bloodPulse > 2)
+						if (Frame.getWidth() > Frame.getHeight())
+						{
+							scale *= Frame.getHeight() / bloodImage.getWidth();
+						}
+						else
+						{
+							scale *= Frame.getWidth() / bloodImage.getWidth();
+						}
+							
+						GL.translate((Frame.getWidth() - bloodImage.getWidth() * scale) / 2, (Frame.getHeight() - bloodImage.getWidth() * scale) / 2, 0);
+						
+						float alpha = player.getMaxHealth() - player.getHealth();
+						
+						alpha /= player.getMaxHealth() * 2;
+						alpha += 0.5f;
+						
+						GL.scale(scale, scale, 1);
+						
+						Color color = GL.getColor();
+						
+						GL.setColor(1, 1, 1, alpha - 0.5f);
+						
+						bloodImage.render();
+						
+						GL.setColor(color);
+						
+						if (player.getHealth() < player.getMaxHealth())
+						{
+							bloodPulse += 0.1f * delta;
+							
+							if (bloodPulse > 2)
+							{
+								bloodPulse = 0;
+							}
+						}
+						else
 						{
 							bloodPulse = 0;
 						}
 					}
-					else
-					{
-						bloodPulse = 0;
-					}
+					GL.popMatrix();
 				}
-				GL.popMatrix();
 			}
 			GL.popMatrix();
 		
@@ -467,7 +478,10 @@ public class ZombieHunt extends GameStarter
 					openPauseMenu();
 				}
 				
-				float scale = deathMenuTimer /= 1.1f;
+				float amount = deathMenuTimer / 25f;
+				amount *= delta;
+				
+				float scale = deathMenuTimer -= amount;
 				
 				if (scale > 1)
 				{

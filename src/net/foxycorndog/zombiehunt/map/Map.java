@@ -256,6 +256,7 @@ public class Map extends JImageMap
 		GL.pushMatrix();
 		{
 			GL.unscale();
+			GL.unrotate();
 			
 			GL.translate(0, 0, 5);
 			
@@ -362,15 +363,27 @@ public class Map extends JImageMap
 		int wOff = Math.round(a.getWidth()  * 2f / 3f + xOff);
 		int hOff = Math.round(a.getHeight() * 2f / 3f + yOff);
 		
+		if (xOff < 0)
+		{
+			xOff = 0;
+		}
+		else if (wOff >= actors.getWidth())
+		{
+			wOff = actors.getWidth() - 1;
+		}
+		if (yOff < 0)
+		{
+			yOff = 0;
+		}
+		else if (hOff >= actors.getHeight())
+		{
+			hOff = actors.getHeight() - 1;
+		}
+		
 		for (int y = yOff; y < hOff; y++)
 		{
 			for (int x = xOff; x < wOff; x++)
 			{
-				if (x < 0 || x >= actors.getWidth() || y < 0 || y >= actors.getHeight())
-				{
-					continue;
-				}
-				
 				Actor a2 = actors.get(x, y);
 				
 				if (a2 == null || a2.isDisposed() || a == a2)
